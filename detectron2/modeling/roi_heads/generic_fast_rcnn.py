@@ -262,5 +262,5 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         mask_generic_bboxes = np.zeros((len(generic_boxes)), dtype=bool)
         for index, matchings_to_classes in enumerate(pair_ious):
             mask_generic_bboxes[index] = max(
-                matchings_to_classes) < threshold_generic_iou
+                matchings_to_classes, default=0.0) < threshold_generic_iou
         return mask_generic_bboxes
