@@ -26,19 +26,25 @@ def setup_cfg(args):
     cfg.MODEL.RETINANET.SCORE_THRESH_TEST = args.confidence_threshold
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = args.confidence_threshold
     cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = args.confidence_threshold
+    cfg.MODEL.ROI_HEADS.OBJECTNESS_NMS_THRESH_TEST = args.objectness_nms
+    cfg.MODEL.ROI_HEADS.OBJECTNESS_SCORE_THRESH_TEST = args.objectness_score_threshold
     cfg.freeze()
     return cfg
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description="Detectron2 demo for builtin configs")
+    parser = argparse.ArgumentParser(
+        description="Detectron2 demo for builtin configs")
     parser.add_argument(
         "--config-file",
-        default="configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
+        default=
+        "configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
         metavar="FILE",
         help="path to config file",
     )
-    parser.add_argument("--webcam", action="store_true", help="Take inputs from webcam.")
+    parser.add_argument("--webcam",
+                        action="store_true",
+                        help="Take inputs from webcam.")
     parser.add_argument("--video-input", help="Path to video file.")
     parser.add_argument(
         "--input",
@@ -58,6 +64,21 @@ def get_parser():
         default=0.5,
         help="Minimum score for instance predictions to be shown",
     )
+
+    parser.add_argument(
+        "--objectness-score-threshold",
+        type=float,
+        default=4.5,
+        help="Minimum objectness score for object predictions to be shown",
+    )
+
+    parser.add_argument(
+        "--objectness-nms",
+        type=float,
+        default=0.5,
+        help="NMS threshold for supressing generic objects",
+    )
+
     parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
@@ -87,27 +108,28 @@ if __name__ == "__main__":
             img = read_image(path, format="BGR")
             start_time = time.time()
             predictions, visualized_output = demo.run_on_image(img)
-            logger.info(
-                "{}: {} in {:.2f}s".format(
-                    path,
-                    "detected {} instances".format(len(predictions["instances"]))
-                    if "instances" in predictions
-                    else "finished",
-                    time.time() - start_time,
-                )
-            )
+            logger.info("{}: {} in {:.2f}s".format(
+                path,
+                "detected {} instances".format(len(predictions["instances"]))
+                if "instances" in predictions else "finished",
+                time.time() - start_time,
+            ))
 
             if args.output:
                 if os.path.isdir(args.output):
                     assert os.path.isdir(args.output), args.output
-                    out_filename = os.path.join(args.output, os.path.basename(path))
+                    out_filename = os.path.join(args.output,
+                                                os.path.basename(path))
                 else:
-                    assert len(args.input) == 1, "Please specify a directory with args.output"
+                    assert len(
+                        args.input
+                    ) == 1, "Please specify a directory with args.output"
                     out_filename = args.output
                 visualized_output.save(out_filename)
             else:
                 cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-                cv2.imshow(WINDOW_NAME, visualized_output.get_image()[:, :, ::-1])
+                cv2.imshow(WINDOW_NAME,
+                           visualized_output.get_image()[:, :, ::-1])
                 if cv2.waitKey(0) == 27:
                     break  # esc to quit
     elif args.webcam:

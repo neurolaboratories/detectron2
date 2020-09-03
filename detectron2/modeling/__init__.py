@@ -37,9 +37,11 @@ from .roi_heads import (
     ROI_MASK_HEAD_REGISTRY,
     ROIHeads,
     StandardROIHeads,
+    GenericROIHeads,
     BaseMaskRCNNHead,
     BaseKeypointRCNNHead,
     FastRCNNOutputLayers,
+    GenericFastRCNNOutputLayers,
     build_box_head,
     build_keypoint_head,
     build_mask_head,
@@ -48,4 +50,6 @@ from .roi_heads import (
 from .test_time_augmentation import DatasetMapperTTA, GeneralizedRCNNWithTTA
 
 _EXCLUDE = {"ShapeSpec"}
-__all__ = [k for k in globals().keys() if k not in _EXCLUDE and not k.startswith("_")]
+__all__ = [
+    k for k in globals().keys() if k not in _EXCLUDE and not k.startswith("_")
+]

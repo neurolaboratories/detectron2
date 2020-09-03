@@ -33,6 +33,7 @@ class VisualizationDemo(object):
             self.predictor = AsyncPredictor(cfg, num_gpus=num_gpu)
         else:
             self.predictor = DefaultPredictor(cfg)
+        self.metadata.thing_classes.append("object")
 
     def run_on_image(self, image):
         """
