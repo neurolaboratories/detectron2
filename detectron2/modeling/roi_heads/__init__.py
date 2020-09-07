@@ -13,6 +13,9 @@ from .roi_heads import (
 from .rotated_fast_rcnn import RROIHeads
 from .fast_rcnn import FastRCNNOutputLayers
 
+from .generic_fast_rcnn import GenericFastRCNNOutputLayers
+from .generic_roi_heads import GenericROIHeads
+
 from . import cascade_rcnn  # isort:skip
 
 __all__ = list(globals().keys())

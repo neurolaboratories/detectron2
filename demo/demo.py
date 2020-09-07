@@ -26,6 +26,8 @@ def setup_cfg(args):
     cfg.MODEL.RETINANET.SCORE_THRESH_TEST = args.confidence_threshold
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = args.confidence_threshold
     cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = args.confidence_threshold
+    cfg.MODEL.ROI_HEADS.OBJECTNESS_NMS_THRESH_TEST = args.objectness_nms
+    cfg.MODEL.ROI_HEADS.OBJECTNESS_SCORE_THRESH_TEST = args.objectness_score_threshold
     cfg.freeze()
     return cfg
 
@@ -58,6 +60,21 @@ def get_parser():
         default=0.5,
         help="Minimum score for instance predictions to be shown",
     )
+
+    parser.add_argument(
+        "--objectness-score-threshold",
+        type=float,
+        default=4.5,
+        help="Minimum objectness score for object predictions to be shown",
+    )
+
+    parser.add_argument(
+        "--objectness-nms",
+        type=float,
+        default=0.5,
+        help="NMS threshold for supressing generic objects",
+    )
+
     parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
