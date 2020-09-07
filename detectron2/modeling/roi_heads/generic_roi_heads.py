@@ -1,9 +1,9 @@
 from detectron2.layers.shape_spec import ShapeSpec
-from .roi_heads import ROI_HEADS_REGISTRY, StandardROIHeads
 from detectron2.modeling.poolers import ROIPooler
 from detectron2.modeling.roi_heads.box_head import build_box_head
 
 from .generic_fast_rcnn import GenericFastRCNNOutputLayers
+from .roi_heads import ROI_HEADS_REGISTRY, StandardROIHeads
 
 
 @ROI_HEADS_REGISTRY.register()
@@ -12,6 +12,7 @@ class GenericROIHeads(StandardROIHeads):
     The `GenericROIHeads` for Faster RCNN.
     See :class:`GenericROIHeads`.
     """
+
     def __init__(self, cfg, input_shape):
         super(GenericROIHeads, self).__init__(cfg, input_shape)
 
@@ -42,10 +43,8 @@ class GenericROIHeads(StandardROIHeads):
         # They are used together so the "box predictor" layers should be part of the "box head".
         # New subclasses of ROIHeads do not need "box predictor"s.
         box_head = build_box_head(
-            cfg,
-            ShapeSpec(channels=in_channels,
-                      height=pooler_resolution,
-                      width=pooler_resolution))
+            cfg, ShapeSpec(channels=in_channels, height=pooler_resolution, width=pooler_resolution)
+        )
         box_predictor = GenericFastRCNNOutputLayers(cfg, box_head.output_shape)
         return {
             "box_in_features": in_features,

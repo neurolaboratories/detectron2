@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+
 from detectron2.layers import batched_nms
 from detectron2.modeling.roi_heads.fast_rcnn import FastRCNNOutputLayers
 from detectron2.structures import Boxes, Instances, pairwise_iou
@@ -30,6 +31,7 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
       (1) proposal-to-detection box regression deltas
       (2) classification scores
     """
+
     def __init__(self, cfg, input_shape):
         """
         Args:
@@ -58,10 +60,9 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         boxes = self.predict_boxes(predictions, proposals)
         scores = self.predict_probs(predictions, proposals)
         image_shapes = [x.image_size for x in proposals]
-        return self._generic_inference(boxes=boxes,
-                                       scores=scores,
-                                       proposals=proposals,
-                                       image_shapes=image_shapes)
+        return self._generic_inference(
+            boxes=boxes, scores=scores, proposals=proposals, image_shapes=image_shapes
+        )
 
     def _generic_inference(self, boxes, scores, proposals, image_shapes):
         """
@@ -91,18 +92,16 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
                 [0, Ri) from the input, for image i.
         """
         result_per_image = [
-            self._generic_inference_single_image(boxes_per_image,
-                                                 scores_per_image,
-                                                 proposals_per_image,
-                                                 image_shape)
-            for scores_per_image, proposals_per_image, boxes_per_image,
-            image_shape in zip(scores, proposals, boxes, image_shapes)
+            self._generic_inference_single_image(
+                boxes_per_image, scores_per_image, proposals_per_image, image_shape
+            )
+            for scores_per_image, proposals_per_image, boxes_per_image, image_shape in zip(
+                scores, proposals, boxes, image_shapes
+            )
         ]
-        return [x[0]
-                for x in result_per_image], [x[1] for x in result_per_image]
+        return [x[0] for x in result_per_image], [x[1] for x in result_per_image]
 
-    def _generic_inference_single_image(self, boxes, scores, proposals,
-                                        image_shape):
+    def _generic_inference_single_image(self, boxes, scores, proposals, image_shape):
         """
         Single-image inference. Return bounding-box detection results by thresholding
         on scores and applying non-maximum suppression (NMS).
@@ -114,8 +113,7 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         """
 
         # Filter invalid choices
-        valid_mask = torch.isfinite(boxes).all(
-            dim=1) & torch.isfinite(scores).all(dim=1)
+        valid_mask = torch.isfinite(boxes).all(dim=1) & torch.isfinite(scores).all(dim=1)
 
         if not valid_mask.all():
             boxes = boxes[valid_mask]
@@ -126,14 +124,16 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         generic_idx = scores.shape[1]
 
         class_boxes, class_scores, class_inds = self._get_class_predictions(
-            boxes=boxes, scores=scores, image_shape=image_shape)
+            boxes=boxes, scores=scores, image_shape=image_shape
+        )
 
         generic_boxes, generic_scores, generic_inds = self._get_generic_predictions(
             proposals=proposals,
             class_boxes=class_boxes,
             class_scores=class_scores,
             class_inds=class_inds,
-            generic_idx=generic_idx)
+            generic_idx=generic_idx,
+        )
 
         out_boxes = torch.cat((class_boxes, generic_boxes), 0)
         out_scores = torch.cat((class_scores, generic_scores), 0)
@@ -167,20 +167,21 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         scores = scores[filter_mask]
 
         # Apply per-class NMS
-        keep_class = batched_nms(boxes, scores, class_inds[:, 1],
-                                 self.class_nms_thresh_test)
+        keep_class = batched_nms(boxes, scores, class_inds[:, 1], self.class_nms_thresh_test)
         if self.topk_per_image_test >= 0:
-            keep_class = keep_class[:self.topk_per_image_test]
+            keep_class = keep_class[: self.topk_per_image_test]
 
-        boxes, scores, class_inds = boxes[keep_class], scores[
-            keep_class], class_inds[keep_class]
+        boxes, scores, class_inds = boxes[keep_class], scores[keep_class], class_inds[keep_class]
 
         return boxes, scores, class_inds
 
     def _get_generic_predictions(
-        self, proposals: Instances, class_boxes: torch.FloatTensor,
-        class_scores: torch.FloatTensor, class_inds: torch.FloatTensor,
-        generic_idx: int
+        self,
+        proposals: Instances,
+        class_boxes: torch.FloatTensor,
+        class_scores: torch.FloatTensor,
+        class_inds: torch.FloatTensor,
+        generic_idx: int,
     ) -> (torch.FloatTensor, torch.FloatTensor, torch.IntTensor):
         """Select generic predictions with objectness score larger than a threshold and that don't match class objects
 
@@ -197,8 +198,7 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         """
         #####
         # Per object
-        objectness = proposals.objectness_logits.reshape(
-            (proposals.objectness_logits.shape[0], 1))
+        objectness = proposals.objectness_logits.reshape((proposals.objectness_logits.shape[0], 1))
 
         obj_boxes = proposals.proposal_boxes.tensor
 
@@ -210,7 +210,8 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
 
         # Filter generic objects that overlap with class predictions
         generic_mask = self._find_generic_objects_suppression_mask(
-            class_boxes, obj_boxes, self.objectness_nms_thresh_test)
+            class_boxes, obj_boxes, self.objectness_nms_thresh_test
+        )
 
         objectness = objectness[filter_object_mask]
 
@@ -222,9 +223,9 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         generic_inds[:, 1] = generic_idx
 
         # Apply NMS to generic predictions
-        nms_filtered = batched_nms(generic_boxes, generic_scores,
-                                   generic_inds[:, 1],
-                                   self.objectness_nms_thresh_test)
+        nms_filtered = batched_nms(
+            generic_boxes, generic_scores, generic_inds[:, 1], self.objectness_nms_thresh_test
+        )
 
         generic_boxes = generic_boxes[nms_filtered]
         generic_inds = generic_inds[:][nms_filtered]
@@ -243,10 +244,11 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         return generic_boxes, generic_scores, generic_inds
 
     def _find_generic_objects_suppression_mask(
-            self,
-            class_boxes: torch.FloatTensor,
-            generic_boxes: torch.FloatTensor,
-            threshold_generic_iou: float = 0.7) -> np.ndarray:
+        self,
+        class_boxes: torch.FloatTensor,
+        generic_boxes: torch.FloatTensor,
+        threshold_generic_iou: float = 0.7,
+    ) -> np.ndarray:
         """Find the mask for all generic object instances that have IoU < threshold 
         than all of the class instances
 
@@ -261,6 +263,7 @@ class GenericFastRCNNOutputLayers(FastRCNNOutputLayers):
         pair_ious = pairwise_iou(Boxes(generic_boxes), Boxes(class_boxes))
         mask_generic_bboxes = np.zeros((len(generic_boxes)), dtype=bool)
         for index, matchings_to_classes in enumerate(pair_ious):
-            mask_generic_bboxes[index] = max(
-                matchings_to_classes, default=0.0) < threshold_generic_iou
+            mask_generic_bboxes[index] = (
+                max(matchings_to_classes, default=0.0) < threshold_generic_iou
+            )
         return mask_generic_bboxes
