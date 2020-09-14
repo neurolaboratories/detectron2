@@ -211,7 +211,10 @@ def _create_text_labels(classes, scores, class_names):
         if labels is None:
             labels = ["{:.0f}%".format(s * 100) for s in scores]
         else:
-            labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
+            labels = [
+                "{} {:.0f}%".format(l, s * 100) if l is not "object" else "{} {:.2f}".format(l, s)
+                for l, s in zip(labels, scores)
+            ]
     return labels
 
 
